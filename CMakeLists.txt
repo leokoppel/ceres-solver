@@ -400,17 +400,18 @@ ENDIF (NOT CUSTOM_BLAS)
 
 IF (OPENMP)
   # Clang does not (yet) support OpenMP.
-  IF (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  IF (CMAKE_CXX_COMPILER_ID STREQUAL "NotClang")
     UPDATE_CACHE_VARIABLE(OPENMP OFF)
     MESSAGE("-- Compiler is Clang, disabling OpenMP.")
     LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_THREADS)
-  ELSE (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  ELSE (CMAKE_CXX_COMPILER_ID STREQUAL "NotClang")
     # Find quietly s/t as we can continue without OpenMP if it is not found.
-    FIND_PACKAGE(OpenMP QUIET)
+    #FIND_PACKAGE(OpenMP QUIET)
+    set(OPENMP_FOUND ON)
     IF (OPENMP_FOUND)
       MESSAGE("-- Building with OpenMP.")
       LIST(APPEND CERES_COMPILE_OPTIONS CERES_USE_OPENMP)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp=libomp")
       IF (UNIX)
         # At least on Linux, we need pthreads to be enabled for mutex to
         # compile.  This may not work on Windows or Android.
@@ -423,7 +424,7 @@ IF (OPENMP)
       UPDATE_CACHE_VARIABLE(OPENMP OFF)
       LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_THREADS)
     ENDIF (OPENMP_FOUND)
-  ENDIF (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  ENDIF (CMAKE_CXX_COMPILER_ID STREQUAL "NotClang")
 ELSE (OPENMP)
   MESSAGE("-- Building without OpenMP (disabling multithreading).")
   LIST(APPEND CERES_COMPILE_OPTIONS CERES_NO_THREADS)
@@ -431,6 +432,7 @@ ENDIF (OPENMP)
 
 INCLUDE(CheckIncludeFileCXX)
 CHECK_INCLUDE_FILE_CXX(unordered_map HAVE_STD_UNORDERED_MAP_HEADER)
+set(HAVE_STD_UNORDERED_MAP_HEADER ON)
 IF (HAVE_STD_UNORDERED_MAP_HEADER)
   # Finding the unordered_map header doesn't mean that unordered_map
   # is in std namespace.
@@ -445,6 +447,7 @@ IF (HAVE_STD_UNORDERED_MAP_HEADER)
                                return 0;
                              }"
                             HAVE_UNORDERED_MAP_IN_STD_NAMESPACE)
+  SET(HAVE_UNORDERED_MAP_IN_STD_NAMESPACE ON)                            
   IF (HAVE_UNORDERED_MAP_IN_STD_NAMESPACE)
     LIST(APPEND CERES_COMPILE_OPTIONS CERES_STD_UNORDERED_MAP)
     MESSAGE("-- Found unordered_map/set in std namespace.")
@@ -479,6 +482,7 @@ ENDIF (HAVE_STD_UNORDERED_MAP_HEADER)
 
 INCLUDE(FindSharedPtr)
 FIND_SHARED_PTR()
+set(SHARED_PTR_FOUND ON)
 IF (SHARED_PTR_FOUND)
   IF (SHARED_PTR_TR1_MEMORY_HEADER)
     LIST(APPEND CERES_COMPILE_OPTIONS CERES_TR1_MEMORY_HEADER)
